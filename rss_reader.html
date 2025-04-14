@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSS 閱讀器</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+        }
+        .container {
+            margin-top: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #feedContent {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        .item {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #ccc;
+        }
+        .item:last-child {
+            border-bottom: none;
+        }
+        .item-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .item-meta {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .item-link {
+            display: inline-block;
+            margin: 10px 0;
+            color: #0066cc;
+            text-decoration: none;
+        }
+        .item-link:hover {
+            text-decoration: underline;
+        }
+        .item-content {
+            line-height: 1.8;
+        }
+        .item-content img {
+            max-width: 100%;
+            height: auto;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .feed-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        .feed-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        .feed-description {
+            font-size: 16px;
+            color: #666;
+            margin-top: 10px;
+        }
+        .error-message {
+            background-color: #ffdddd;
+            color: #990000;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            margin-right: 5px;
+        }
+        .tab.active {
+            border-color: #ddd;
+            background-color: #fff;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            font-size: 14px;
+            font-family: monospace;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .view-mode {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 4px;
+            border: 1px solid #add8e6;
+        }
+        .view-mode label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        .view-mode input[type="radio"] {
+            margin-right: 5px;
+        }
+        .main-post {
+            background-color: #f5f5f5;
+            border-left: 4px solid #4CAF50;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .reply-post {
+            margin-left: 20px;
+            padding-left: 15px;
+            border-left: 2px solid #ddd;
+        }
+        .post-meta {
+            font-size: 12px;
+            color: #666;
+            margin: 5px 0 15px 0;
+        }
+        .forum-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .forum-description {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .replies-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            color: #333;
+        }
+        .filter-panel {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .sticky-filter-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 250px;
+        }
+        .filter-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .filter-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .filter-item {
+            background-color: #e6e6e6;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+        }
+        .filter-item.active {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        .filter-count {
+            background-color: #666;
+            color: white;
+            border-radius: 10px;
+            padding: 0 5px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        .filter-mode {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .filter-mode label {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 2px 5px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .copy-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 3px;
+            fill: currentColor;
+        }
+        .copy-btn-icon-only {
+            padding: 2px;
+            margin-left: 5px;
+        }
+        .copy-btn-icon-only svg {
+            margin-right: 0;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 11px;
+            pointer-events: none;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .copy-success {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            z-index: 1000;
+            display: none;
+        }
+        .hidden-item {
+            opacity: 0.3;
+        }
+        .hidden-item .item-content {
+            display: none;
+        }
+        .hidden-text {
+            display: none !important;
+        }
+        .body-with-filter {
+            max-width: calc(100% - 280px);
+        }
+    </style>
+</head>
+<body>
+    <h1>RSS 閱讀器</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('urlTab')">使用URL獲取</div>
+        <div class="tab" onclick="switchTab('pasteTab')">貼上RSS內容</div>
+        <div class="tab" onclick="switchTab('fileTab')">從文件讀取</div>
+    </div>
+    
+    <div id="urlTab" class="tab-content active">
+        <div class="container">
+            <label for="rssUrl">輸入 RSS 連結:</label>
+            <input type="text" id="rssUrl" placeholder="https://example.com/feed.rss" value="https://linux.do/t/topic/333401.rss">
+            <button onclick="fetchRSS()">獲取 RSS 內容</button>
+            <p><small>注意: 由於CORS限制，直接獲取某些網站的RSS可能會失敗。如果遇到錯誤，請嘗試使用其他選項。</small></p>
+        </div>
+    </div>
+    
+    <div id="pasteTab" class="tab-content">
+        <div class="container">
+            <label for="rssPaste">貼上 RSS XML 內容:</label>
+            <textarea id="rssPaste" placeholder="請貼上完整的RSS/XML內容..."></textarea>
+            <button onclick="parseRSSFromText()">解析內容</button>
+        </div>
+    </div>
+    
+    <div id="fileTab" class="tab-content">
+        <div class="container">
+            <label for="rssFile">選擇RSS文件:</label>
+            <input type="file" id="rssFile" accept=".xml,.rss,.txt">
+            <button onclick="parseRSSFromFile()">解析文件</button>
+        </div>
+    </div>
+    
+    <div id="loadingMessage" class="loading" style="display: none;">正在加載內容，請稍候...</div>
+    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    
+    <div id="feedContent" style="display: none;">
+        <div class="feed-header">
+            <div class="feed-title" id="feedTitle"></div>
+            <div class="feed-description" id="feedDescription"></div>
+        </div>
+        
+        <!-- 閱讀模式選擇 -->
+        <div class="view-mode">
+            <strong>閱讀模式:</strong>
+            <label>
+                <input type="radio" name="viewMode" value="default" checked onchange="changeViewMode('default')"> 
+                默認模式
+            </label>
+            <label>
+                <input type="radio" name="viewMode" value="forum" onchange="changeViewMode('forum')"> 
+                論壇模式
+            </label>
+            <small style="display: block; margin-top: 5px; color: #666;">
+                默認模式: 按原始順序顯示所有項目<br>
+                論壇模式: 將第一篇識別為主貼文，其餘為回覆，按時間排序
+            </small>
+        </div>
+        
+        <!-- 重複內容過濾面板 -->
+        <div id="filterPanel" class="filter-panel sticky-filter-panel" style="display: none;">
+            <div class="filter-title">重複內容過濾 <span id="duplicateCount"></span></div>
+            <div id="filterItems" class="filter-items"></div>
+        </div>
+        
+        <div id="copySuccess" class="copy-success">已複製到剪貼板！</div>
+        
+        <div id="feedItems"></div>
+    </div>
+
+    <script>
+        // SVG圖標定義
+        const clipboardSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/></svg>`;
+        
+        // 分類圖標定義
+        const titleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 4V7H10.5V19H13.5V7H19V4H5Z"/></svg>`;
+        const metaSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 4C14.2091 4 16 5.79086 16 8C16 10.2091 14.2091 12 12 12C9.79086 12 8 10.2091 8 8C8 5.79086 9.79086 4 12 4ZM12 14C16.4183 14 20 15.7909 20 18V20H4V18C4 15.7909 7.58172 14 12 14Z"/></svg>`;
+        const contentSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2ZM18 20H6V4H13V9H18V20ZM8 15.01L9.41 16.42L11 14.84V19H13V14.84L14.59 16.43L16 15.01L12.01 11L8 15.01Z"/></svg>`;
+        const allSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM5 19V5H19V19H5Z"/><path d="M7 7H9V9H7z"/><path d="M7 11H9V13H7z"/><path d="M7 15H9V17H7z"/><path d="M11 7H17V9H11z"/><path d="M11 11H17V13H11z"/><path d="M11 15H17V17H11z"/></svg>`;
+        
+        // 當前閱讀模式
+        let currentViewMode = 'default';
+        
+        // 重複內容追蹤
+        let duplicateContents = {};
+        let filteredElements = [];
+        let filterMode = 'highlight';
+        
+        // 切換選項卡
+        function switchTab(tabId) {
+            // 隱藏所有選項卡
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 取消選中所有標籤
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 顯示選中的選項卡
+            document.getElementById(tabId).classList.add('active');
+            
+            // 選中對應的標籤
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.getAttribute('onclick').includes(tabId)) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+    
+        // 當頁面載入時不自動獲取RSS內容，避免CORS錯誤
+        document.addEventListener('DOMContentLoaded', function() {
+            // 不自動獲取，讓用戶選擇方式
+            window.addEventListener('resize', adjustBodyWidth);
+        });
+        
+        function adjustBodyWidth() {
+            const filterPanel = document.getElementById('filterPanel');
+            const body = document.body;
+            
+            if (filterPanel.style.display !== 'none') {
+                body.classList.add('body-with-filter');
+            } else {
+                body.classList.remove('body-with-filter');
+            }
+        }
+
+        function fetchRSS() {
+            const rssUrl = document.getElementById('rssUrl').value.trim();
+            
+            if (!rssUrl) {
+                showError('請輸入有效的RSS連結');
+                return;
+            }
+            
+            // 顯示載入訊息
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('feedContent').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // 嘗試多種CORS代理，增加成功率
+            const corsProxies = [
+                'https://corsproxy.io/?',
+                'https://api.allorigins.win/raw?url=',
+                'https://proxy.cors.sh/',
+                'https://cors.eu.org/',
+                'https://crossorigin.me/'
+            ];
+            
+            // 逐個嘗試不同的代理
+            tryNextProxy(rssUrl, corsProxies, 0);
+        }
+        
+        // 遞迴嘗試多個代理
+        function tryNextProxy(rssUrl, proxies, index) {
+            if (index >= proxies.length) {
+                showError(`所有CORS代理均失敗，請嘗試使用"貼上RSS內容"或"從文件讀取"選項。<br><br>
+                <button onclick="loadExampleContent()">加載示例內容</button> 或 
+                <button onclick="showProxyBypassHelp()">查看手動獲取RSS內容的方法</button>`);
+                return;
+            }
+            
+            const corsProxy = proxies[index];
+            
+            // 獲取RSS內容
+            fetch(corsProxy + encodeURIComponent(rssUrl))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP 錯誤: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    parseRSS(data);
+                })
+                .catch(error => {
+                    console.log(`代理 ${corsProxy} 失敗: ${error.message}`);
+                    // 嘗試下一個代理
+                    tryNextProxy(rssUrl, proxies, index + 1);
+                });
+        }
+        
+        // 加載示例內容到貼上區域
+        function loadExampleContent() {
+            // Linux.do RSS示例
+            const exampleContent = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:discourse="http://www.discourse.org/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>關閉gcp 的方法</title>
+    <link>https://linux.do/t/topic/333401.rss</link>
+    <description>到 https://console.cloud.google.com/billing 找到 ![image|690x366](upload://9B9Gc0PiQIjGCm3ZMEgohcfhSbz.png) 關閉 ![image|690x366](upload://1JXOZJRuFEbvQ1vnv1pHIwDVhGu.png) 到 並移除信用卡 ![image|690x366](upload://4LxAxBlXoPn5ajf6oUXN66VmKNL.png) 接下來就愉快地邁向下一個gcp吧 ![image|690x366](upload://w4eAtbivHZHvXsdwvbPE9VJwLep.png)</description>
+    <discourse:url>https://linux.do/t/topic/333401</discourse:url>
+    <discourse:topicId>333401</discourse:topicId>
+    <atom:link href="https://linux.do/t/topic/333401.rss" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 09 Jan 2025 06:42:42 +0000</lastBuildDate>
+    <category>GCP</category>
+    <item>
+      <title>關閉gcp 的方法</title>
+      <dc:creator><![CDATA[搞七捻三]]></dc:creator>
+      <description><![CDATA[
+            <p>到</p>
+<p><a href="https://console.cloud.google.com/billing">accounts.google.com</a></p>
+<p>找到</p>
+<p><img src="https://linux.do/uploads/default/original/2X/9/9b9gc0piqijgcm3zmegohcfhsbz.png" alt="image" data-base62-sha1="9B9Gc0PiQIjGCm3ZMEgohcfhSbz" width="690" height="366"></p>
+<p>關閉</p>
+<p><img src="https://linux.do/uploads/default/original/2X/1/1jxozjrufebvq1vnv1phiwdvhgu.png" alt="image" data-base62-sha1="1JXOZJRuFEbvQ1vnv1pHIwDVhGu" width="690" height="366"></p>
+<p>到 並移除信用卡</p>
+<p><img src="https://linux.do/uploads/default/original/2X/4/4lxaxblopn5ajf6ouxn66vmknl.png" alt="image" data-base62-sha1="4LxAxBlXoPn5ajf6oUXN66VmKNL" width="690" height="366"></p>
+<p>接下來就愉快地邁向下一個gcp吧</p>
+<p><img src="https://linux.do/uploads/default/original/2X/w/w4eatbivhzhvxsdwvbpe9vjwlep.png" alt="image" data-base62-sha1="w4eAtbivHZHvXsdwvbPE9VJwLep" width="690" height="366"></p>
+      ]]></description>
+      <link>https://linux.do/t/topic/333401/1</link>
+      <pubDate>Thu, 09 Jan 2025 05:54:53 +0000</pubDate>
+      <guid isPermaLink="false">linux.do-post-333401-1</guid>
+      <source url="https://linux.do/t/topic/333401.rss">關閉gcp 的方法</source>
+      <discourse:topicId>333401</discourse:topicId>
+      <discourse:postId>1</discourse:postId>
+      <discourse:username>搞七捻三</discourse:username>
+    </item>
+    <item>
+      <title>關閉gcp 的方法</title>
+      <dc:creator><![CDATA[林黛玉倒拔垂杨柳]]></dc:creator>
+      <description><![CDATA[
+            <p>感谢大佬太强了</p>
+      ]]></description>
+      <link>https://linux.do/t/topic/333401/5</link>
+      <pubDate>Thu, 09 Jan 2025 06:06:20 +0000</pubDate>
+      <guid isPermaLink="false">linux.do-post-333401-5</guid>
+      <source url="https://linux.do/t/topic/333401.rss">關閉gcp 的方法</source>
+      <discourse:topicId>333401</discourse:topicId>
+      <discourse:postId>5</discourse:postId>
+      <discourse:username>林黛玉倒拔垂杨柳</discourse:username>
+    </item>
+  </channel>
+</rss>`;
+
+            // 切換到貼上選項卡
+            switchTab('pasteTab');
+            
+            // 設置示例內容
+            document.getElementById('rssPaste').value = exampleContent;
+            
+            // 顯示提示
+            showError('已加載示例內容，請點擊"解析內容"按鈕解析。');
+        }
+        
+        // 顯示如何繞過CORS的幫助信息
+        function showProxyBypassHelp() {
+            showError(`
+                <h3>如何手動獲取RSS內容</h3>
+                <ol>
+                    <li>在新標籤中打開RSS鏈接：<a href="${document.getElementById('rssUrl').value}" target="_blank">${document.getElementById('rssUrl').value}</a></li>
+                    <li>等待頁面加載完成，您會看到XML格式的內容</li>
+                    <li>全選頁面內容 (按 Ctrl+A)</li>
+                    <li>複製內容 (按 Ctrl+C)</li>
+                    <li>返回此頁面，切換到"貼上RSS內容"選項卡</li>
+                    <li>將內容貼上到文本框中 (按 Ctrl+V)</li>
+                    <li>點擊"解析內容"按鈕</li>
+                </ol>
+            `);
+        }
+        
+        // 從貼上的文本解析RSS
+        function parseRSSFromText() {
+            const rssText = document.getElementById('rssPaste').value.trim();
+            
+            if (!rssText) {
+                showError('請貼上RSS內容');
+                return;
+            }
+            
+            // 顯示載入訊息
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('feedContent').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // 解析貼上的RSS內容
+            parseRSS(rssText);
+        }
+        
+        // 從文件解析RSS
+        function parseRSSFromFile() {
+            const fileInput = document.getElementById('rssFile');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showError('請選擇文件');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // 顯示載入訊息
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('feedContent').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // 讀取文件內容
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseRSS(e.target.result);
+            };
+            reader.onerror = function() {
+                showError('讀取文件失敗');
+            };
+            reader.readAsText(file);
+        }
+        
+        // 切換閱讀模式
+        function changeViewMode(mode) {
+            currentViewMode = mode;
+            const xmlString = document.querySelector('#errorMessage').getAttribute('data-last-xml') || '';
+            if (xmlString) {
+                parseRSS(xmlString);
+            }
+        }
+        
+        function parseRSS(xmlString) {
+            try {
+                // 保存最後解析的XML以便切換模式時使用
+                document.querySelector('#errorMessage').setAttribute('data-last-xml', xmlString);
+                
+                // 解析XML數據
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+                
+                // 處理解析錯誤
+                const parseError = xmlDoc.querySelector("parsererror");
+                if (parseError) {
+                    throw new Error("XML解析錯誤");
+                }
+                
+                // 獲取頻道信息
+                const channel = xmlDoc.querySelector("channel");
+                if (!channel) {
+                    throw new Error("無法找到RSS頻道信息");
+                }
+                
+                const title = channel.querySelector("title")?.textContent || "未知標題";
+                const description = channel.querySelector("description")?.textContent || "無描述";
+                
+                // 更新頻道信息
+                document.getElementById('feedTitle').textContent = title;
+                document.getElementById('feedDescription').textContent = description;
+                
+                // 獲取所有項目
+                const items = xmlDoc.querySelectorAll("item");
+                const feedItemsContainer = document.getElementById('feedItems');
+                feedItemsContainer.innerHTML = ''; // 清空之前的內容
+                
+                if (items.length === 0) {
+                    feedItemsContainer.innerHTML = '<p>沒有找到任何項目</p>';
+                } else {
+                    // 根據閱讀模式處理項目
+                    if (currentViewMode === 'forum' && items.length > 1) {
+                        renderForumMode(items, feedItemsContainer);
+                    } else {
+                        renderDefaultMode(items, feedItemsContainer);
+                    }
+                }
+                
+                // 顯示內容區域
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('feedContent').style.display = 'block';
+                
+            } catch (error) {
+                showError(`解析RSS內容失敗: ${error.message}`);
+            }
+        }
+        
+        // 默認模式渲染
+        function renderDefaultMode(items, container) {
+            // 重置重複內容追蹤
+            duplicateContents = {};
+            filteredElements = [];
+            
+            // 第一次遍歷檢測重複內容 - 改進版本
+            items.forEach(item => {
+                let itemContent = item.querySelector("description")?.textContent || "";
+                
+                // 清理HTML並提取純文本
+                const div = document.createElement('div');
+                div.innerHTML = cleanContent(itemContent);
+                
+                // 獲取所有段落和鏈接文本
+                const paragraphs = div.querySelectorAll('p, a');
+                
+                paragraphs.forEach(paragraph => {
+                    // 獲取段落文本
+                    const text = paragraph.textContent.trim();
+                    
+                    // 如果段落有足夠的內容才進行檢測
+                    if (text && text.length >= 3) {
+                        // 使用完整文本作為識別
+                        if (text in duplicateContents) {
+                            duplicateContents[text].count++;
+                            duplicateContents[text].elements.push({
+                                item: item,
+                                element: paragraph
+                            });
+                        } else {
+                            duplicateContents[text] = {
+                                count: 1,
+                                elements: [{
+                                    item: item,
+                                    element: paragraph
+                                }],
+                                text: text
+                            };
+                        }
+                    }
+                });
+            });
+            
+            // 正常渲染所有項目
+            items.forEach((item, index) => {
+                const itemTitle = item.querySelector("title")?.textContent || "無標題";
+                const itemLink = item.querySelector("link")?.textContent || "#";
+                const itemPubDate = item.querySelector("pubDate")?.textContent || "未知日期";
+                let itemContent = item.querySelector("description")?.textContent || "";
+                const author = item.querySelector("dc\\:creator")?.textContent || 
+                               item.querySelector("creator")?.textContent || 
+                               item.querySelector("author")?.textContent || "匿名";
+                
+                // 創建項目元素
+                const itemElement = document.createElement('div');
+                itemElement.className = 'item';
+                itemElement.dataset.index = index;
+                
+                // 取內容前50個字符作為識別
+                let contentPreview = cleanContent(itemContent).replace(/<[^>]*>/g, '').trim().slice(0, 50);
+                itemElement.dataset.preview = contentPreview;
+                
+                // 添加項目內容
+                itemElement.innerHTML = `
+                    <div class="item-title">
+                        ${itemTitle}
+                        <span class="tooltip copy-btn copy-btn-icon-only" onclick="copyContent(${index}, 'title')">
+                            ${titleSvg}
+                            <span class="tooltiptext">複製標題</span>
+                        </span>
+                    </div>
+                    <div class="item-meta">
+                        作者: ${author} | 發布日期: ${formatDate(itemPubDate)}
+                        <span class="tooltip copy-btn copy-btn-icon-only" onclick="copyContent(${index}, 'meta')">
+                            ${metaSvg}
+                            <span class="tooltiptext">複製作者與日期</span>
+                        </span>
+                    </div>
+                    <a href="${itemLink}" class="item-link" target="_blank">查看原文</a>
+                    <div class="item-content">
+                        ${cleanContent(itemContent)}
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <span class="tooltip copy-btn" onclick="copyContent(${index}, 'content')">
+                                ${contentSvg} 複製內容
+                                <span class="tooltiptext">僅複製正文內容</span>
+                            </span>
+                            <span class="tooltip copy-btn" onclick="copyContent(${index}, 'all')">
+                                ${allSvg} 複製全部
+                                <span class="tooltiptext">複製標題、作者、日期和內容</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(itemElement);
+            });
+            
+            // 更新重複內容過濾面板
+            updateFilterPanel();
+        }
+        
+        // 論壇模式渲染
+        function renderForumMode(items, container) {
+            if (items.length === 0) return;
+            
+            // 重置重複內容追蹤
+            duplicateContents = {};
+            filteredElements = [];
+            
+            // 第一次遍歷檢測重複內容 - 改進版本
+            items.forEach(item => {
+                let itemContent = item.querySelector("description")?.textContent || "";
+                
+                // 清理HTML並提取純文本
+                const div = document.createElement('div');
+                div.innerHTML = cleanContent(itemContent);
+                
+                // 獲取所有段落和鏈接文本
+                const paragraphs = div.querySelectorAll('p, a');
+                
+                paragraphs.forEach(paragraph => {
+                    // 獲取段落文本
+                    const text = paragraph.textContent.trim();
+                    
+                    // 如果段落有足夠的內容才進行檢測
+                    if (text && text.length >= 3) {
+                        // 使用完整文本作為識別
+                        if (text in duplicateContents) {
+                            duplicateContents[text].count++;
+                            duplicateContents[text].elements.push({
+                                item: item,
+                                element: paragraph
+                            });
+                        } else {
+                            duplicateContents[text] = {
+                                count: 1,
+                                elements: [{
+                                    item: item,
+                                    element: paragraph
+                                }],
+                                text: text
+                            };
+                        }
+                    }
+                });
+            });
+            
+            // 第一個項目視為主貼文
+            const mainPost = items[0];
+            const mainTitle = mainPost.querySelector("title")?.textContent || "無標題";
+            const mainLink = mainPost.querySelector("link")?.textContent || "#";
+            const mainPubDate = mainPost.querySelector("pubDate")?.textContent || "未知日期";
+            let mainContent = mainPost.querySelector("description")?.textContent || "";
+            const mainAuthor = mainPost.querySelector("dc\\:creator")?.textContent || 
+                              mainPost.querySelector("creator")?.textContent || 
+                              mainPost.querySelector("author")?.textContent || "匿名";
+                              
+            // 取內容前50個字符作為識別
+            let mainContentPreview = cleanContent(mainContent).replace(/<[^>]*>/g, '').trim().slice(0, 50);
+            
+            // 創建論壇頭部
+            const forumHeader = document.createElement('div');
+            forumHeader.className = 'forum-header';
+            forumHeader.innerHTML = `
+                <div class="forum-title">
+                    ${mainTitle}
+                    <span class="tooltip copy-btn copy-btn-icon-only" onclick="copyContent('main', 'title')">
+                        ${titleSvg}
+                        <span class="tooltiptext">複製標題</span>
+                    </span>
+                </div>
+                <div class="forum-description">
+                    主題創建於 ${formatDate(mainPubDate)}
+                    <span class="tooltip copy-btn copy-btn-icon-only" onclick="copyContent('main', 'meta')">
+                        ${metaSvg}
+                        <span class="tooltiptext">複製作者與日期</span>
+                    </span>
+                </div>
+            `;
+            container.appendChild(forumHeader);
+            
+            // 創建主貼文
+            const mainPostElement = document.createElement('div');
+            mainPostElement.className = 'main-post item';
+            mainPostElement.dataset.index = 'main';
+            mainPostElement.dataset.preview = mainContentPreview;
+            
+            mainPostElement.innerHTML = `
+                <div class="post-meta">
+                    作者: ${mainAuthor} | 發布日期: ${formatDate(mainPubDate)}
+                    <span class="tooltip copy-btn copy-btn-icon-only" onclick="copyContent('main', 'meta')">
+                        ${metaSvg}
+                        <span class="tooltiptext">複製作者與日期</span>
+                    </span>
+                </div>
+                <div class="item-content">
+                    ${cleanContent(mainContent)}
+                    <div style="margin-top: 10px; display: flex; gap: 10px;">
+                        <span class="tooltip copy-btn" onclick="copyContent('main', 'content')">
+                            ${contentSvg} 複製內容
+                            <span class="tooltiptext">僅複製正文內容</span>
+                        </span>
+                        <span class="tooltip copy-btn" onclick="copyContent('main', 'all')">
+                            ${allSvg} 複製全部
+                            <span class="tooltiptext">複製標題、作者、日期和內容</span>
+                        </span>
+                    </div>
+                </div>
+                <a href="${mainLink}" class="item-link" target="_blank">查看原文</a>
+            `;
+            container.appendChild(mainPostElement);
+            
+            // 如果有回覆貼文
+            if (items.length > 1) {
+                const repliesTitle = document.createElement('div');
+                repliesTitle.className = 'replies-title';
+                repliesTitle.textContent = `回覆 (${items.length - 1})`;
+                container.appendChild(repliesTitle);
+                
+                // 獲取除了第一個外的所有項目作為回覆
+                const replies = Array.from(items).slice(1);
+                
+                // 按日期排序回覆（從舊到新）
+                replies.sort((a, b) => {
+                    const dateA = new Date(a.querySelector("pubDate")?.textContent || 0);
+                    const dateB = new Date(b.querySelector("pubDate")?.textContent || 0);
+                    return dateA - dateB;
+                });
+                
+                // 添加所有回覆
+                replies.forEach((reply, index) => {
+                    const replyTitle = reply.querySelector("title")?.textContent || "無標題";
+                    const replyLink = reply.querySelector("link")?.textContent || "#";
+                    const replyPubDate = reply.querySelector("pubDate")?.textContent || "未知日期";
+                    let replyContent = reply.querySelector("description")?.textContent || "";
+                    const replyAuthor = reply.querySelector("dc\\:creator")?.textContent || 
+                                       reply.querySelector("creator")?.textContent || 
+                                       reply.querySelector("author")?.textContent || "匿名";
+                    
+                    // 取內容前50個字符作為識別
+                    let replyContentPreview = cleanContent(replyContent).replace(/<[^>]*>/g, '').trim().slice(0, 50);
+                    
+                    // 創建回覆元素
+                    const replyElement = document.createElement('div');
+                    replyElement.className = 'reply-post item';
+                    replyElement.dataset.index = `reply-${index}`;
+                    replyElement.dataset.preview = replyContentPreview;
+                    
+                    replyElement.innerHTML = `
+                        <div class="post-meta">
+                            #${index + 1} 作者: ${replyAuthor} | 發布日期: ${formatDate(replyPubDate)}
+                            <span class="tooltip copy-btn copy-btn-icon-only" onclick="copyContent('reply-${index}', 'meta')">
+                                ${metaSvg}
+                                <span class="tooltiptext">複製作者與日期</span>
+                            </span>
+                        </div>
+                        <div class="item-content">
+                            ${cleanContent(replyContent)}
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                <span class="tooltip copy-btn" onclick="copyContent('reply-${index}', 'content')">
+                                    ${contentSvg} 複製內容
+                                    <span class="tooltiptext">僅複製正文內容</span>
+                                </span>
+                                <span class="tooltip copy-btn" onclick="copyContent('reply-${index}', 'all')">
+                                    ${allSvg} 複製全部
+                                    <span class="tooltiptext">複製標題、作者、日期和內容</span>
+                                </span>
+                            </div>
+                        </div>
+                        <a href="${replyLink}" class="item-link" target="_blank">查看原文</a>
+                    `;
+                    container.appendChild(replyElement);
+                });
+            }
+            
+            // 更新重複內容過濾面板
+            updateFilterPanel();
+        }
+        
+        // 更新重複內容過濾面板
+        function updateFilterPanel() {
+            const filterPanel = document.getElementById('filterPanel');
+            const filterItems = document.getElementById('filterItems');
+            const duplicateCount = document.getElementById('duplicateCount');
+            
+            // 清空過濾項目
+            filterItems.innerHTML = '';
+            
+            // 統計重複項目數量
+            let duplicatesFound = 0;
+            
+            // 為重複出現超過1次的內容創建過濾選項
+            for (const text in duplicateContents) {
+                if (duplicateContents[text].count > 1) {  // 超過1次(至少2次)的才視為重複
+                    duplicatesFound++;
+                    
+                    // 創建過濾項目
+                    const filterItem = document.createElement('div');
+                    filterItem.className = 'filter-item';
+                    filterItem.dataset.text = text;
+                    
+                    // 顯示內容預覽和出現次數
+                    const displayText = text.length > 30 ? text.slice(0, 30) + '...' : text;
+                    filterItem.innerHTML = `
+                        ${displayText}
+                        <span class="filter-count">${duplicateContents[text].count}</span>
+                    `;
+                    
+                    // 添加點擊事件
+                    filterItem.addEventListener('click', function() {
+                        // 切換激活狀態
+                        this.classList.toggle('active');
+                        
+                        // 根據激活狀態過濾內容
+                        filterContentByText(this.dataset.text, this.classList.contains('active'));
+                    });
+                    
+                    filterItems.appendChild(filterItem);
+                }
+            }
+            
+            // 排序過濾項目 - 按計數倒序排列
+            Array.from(filterItems.children)
+                .sort((a, b) => {
+                    const countA = parseInt(a.querySelector('.filter-count').textContent);
+                    const countB = parseInt(b.querySelector('.filter-count').textContent);
+                    return countB - countA;
+                })
+                .forEach(item => filterItems.appendChild(item));
+            
+            // 更新重複計數
+            duplicateCount.textContent = `(找到 ${duplicatesFound} 組重複內容)`;
+            
+            // 如果有重複內容，顯示過濾面板
+            if (duplicatesFound > 0) {
+                filterPanel.style.display = 'block';
+                adjustBodyWidth();
+            } else {
+                filterPanel.style.display = 'none';
+                adjustBodyWidth();
+            }
+        }
+        
+        // 根據文本過濾內容
+        function filterContentByText(text, isActive) {
+            if (!duplicateContents[text]) return;
+            
+            // 查找所有包含此文本的span元素
+            const spans = document.querySelectorAll(`span[data-duplicate-text="${text}"]`);
+            
+            spans.forEach(span => {
+                if (isActive) {
+                    // 高亮顯示
+                    span.style.backgroundColor = '#ffff00';
+                    span.classList.remove('hidden-text');
+                } else {
+                    // 隱藏重複文本
+                    span.classList.add('hidden-text');
+                }
+            });
+        }
+        
+        // 高亮元素中的特定文本
+        function highlightTextInElement(element, text) {
+            // 獲取所有段落和鏈接
+            const textNodes = getAllTextNodes(element);
+            
+            textNodes.forEach(node => {
+                const content = node.textContent;
+                if (content.includes(text)) {
+                    // 創建一個臨時容器
+                    const span = document.createElement('span');
+                    span.innerHTML = content.replace(
+                        new RegExp(escapeRegExp(text), 'g'), 
+                        `<span data-duplicate-text="${text}" style="background-color: #ffff00;">${text}</span>`
+                    );
+                    
+                    // 只有當生成的HTML與原始文本不同時才替換
+                    if (span.innerHTML !== content) {
+                        // 替換原始節點
+                        const parent = node.parentNode;
+                        while (span.firstChild) {
+                            parent.insertBefore(span.firstChild, node);
+                        }
+                        parent.removeChild(node);
+                    }
+                }
+            });
+        }
+        
+        // 移除元素中的高亮
+        function removeHighlightFromElement(element) {
+            // 查找所有高亮span
+            const highlightSpans = element.querySelectorAll('span[data-duplicate-text]');
+            
+            highlightSpans.forEach(span => {
+                // 創建一個文本節點替換高亮span
+                const textNode = document.createTextNode(span.textContent);
+                span.parentNode.replaceChild(textNode, span);
+            });
+        }
+        
+        // 獲取元素中的所有文本節點
+        function getAllTextNodes(element) {
+            const textNodes = [];
+            const walk = document.createTreeWalker(
+                element, 
+                NodeFilter.SHOW_TEXT, 
+                null, 
+                false
+            );
+            
+            let node;
+            while (node = walk.nextNode()) {
+                if (node.textContent.trim()) {
+                    textNodes.push(node);
+                }
+            }
+            
+            return textNodes;
+        }
+        
+        // 轉義正則表達式特殊字符
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // 複製內容到剪貼板
+        function copyContent(itemIndex, part) {
+            const item = document.querySelector(`.item[data-index="${itemIndex}"]`);
+            if (!item) return;
+            
+            let content = '';
+            let title = '';
+            let author = '';
+            let date = '';
+            let itemContent = '';
+            
+            // 獲取不同部分的內容
+            if (item.querySelector('.item-title')) {
+                title = item.querySelector('.item-title').textContent.replace('複製', '').trim();
+            } else if (item.closest('.forum-title')) {
+                title = item.closest('.forum-title').textContent.replace('複製', '').trim();
+            }
+            
+            // 獲取元數據
+            const metaElement = item.querySelector('.item-meta, .post-meta');
+            if (metaElement) {
+                const metaText = metaElement.textContent.replace('複製', '').trim();
+                const authorMatch = metaText.match(/作者: ([^|]+)/);
+                const dateMatch = metaText.match(/發布日期: ([^|]+)/);
+                
+                if (authorMatch) author = authorMatch[1].trim();
+                if (dateMatch) date = dateMatch[1].trim();
+            }
+            
+            // 獲取內容
+            const contentElement = item.querySelector('.item-content');
+            if (contentElement) {
+                // 創建一個副本，移除複製按鈕
+                const contentCopy = contentElement.cloneNode(true);
+                const copyBtns = contentCopy.querySelectorAll('.copy-btn');
+                copyBtns.forEach(btn => btn.remove());
+                
+                // 處理圖片為Markdown格式
+                const images = contentCopy.querySelectorAll('img');
+                images.forEach(img => {
+                    const altText = img.alt || 'image';
+                    const src = img.src;
+                    const markdownImg = document.createTextNode(`![${altText}](${src})`);
+                    img.parentNode.replaceChild(markdownImg, img);
+                });
+                
+                // 獲取純文本內容
+                itemContent = contentCopy.textContent.trim();
+            }
+            
+            // 根據請求的部分組合Markdown內容
+            switch (part) {
+                case 'title':
+                    content = `# ${title}`;
+                    break;
+                case 'meta':
+                    content = `- **作者:** ${author}\n- **日期:** ${date}`;
+                    break;
+                case 'content':
+                    content = itemContent;
+                    break;
+                case 'all':
+                    content = `# ${title}\n\n- **作者:** ${author}\n- **日期:** ${date}\n\n${itemContent}`;
+                    break;
+            }
+            
+            // 複製到剪貼板
+            navigator.clipboard.writeText(content).then(() => {
+                // 顯示成功提示
+                const copySuccess = document.getElementById('copySuccess');
+                copySuccess.style.display = 'block';
+                setTimeout(() => {
+                    copySuccess.style.display = 'none';
+                }, 2000);
+            });
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            if (!dateString) return "未知日期";
+            
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleString('zh-TW');
+            } catch (e) {
+                return dateString;
+            }
+        }
+        
+        // 清理內容HTML
+        function cleanContent(content) {
+            if (!content) return "";
+            
+            // 處理CDATA內容
+            if (content.includes("<![CDATA[")) {
+                content = content.replace(/<!\[CDATA\[(.*?)\]\]>/gs, "$1");
+            }
+            
+            // 創建一個div來處理HTML
+            const div = document.createElement('div');
+            div.innerHTML = content;
+            
+            // 處理圖片
+            const images = div.querySelectorAll('img');
+            images.forEach(img => {
+                // 修復相對URL
+                if (img.src.startsWith('upload://')) {
+                    img.src = 'https://linux.do/' + img.src;
+                }
+                
+                // 添加loading屬性
+                img.setAttribute('loading', 'lazy');
+            });
+            
+            return div.innerHTML;
+        }
+        
+        // 顯示錯誤信息
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.innerHTML = message; // 使用innerHTML而不是textContent來支持HTML標籤
+            errorElement.style.display = 'block';
+            
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('feedContent').style.display = 'none';
+        }
+    </script>
+</body>
+</html> 
